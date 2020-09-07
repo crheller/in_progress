@@ -20,16 +20,24 @@ import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 
+fig_path = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/dump_figs/'
+
 # recording load options
 options = {'resp': True, 'pupil': False, 'rasterfs': 10}
 
 # state-space projection options
-zscore = True
+zscore = False
 
 # siteids
 sites = ['CRD009b', 'CRD010b', 'CRD011c', 'CRD012b', 'CRD013b', 'CRD016c', 'CRD017c', 'CRD018d', 'CRD019b']
 
-for site in sites:
+for site in ['CRD010b']: #sites:
+    if os.path.isdir(os.path.join(fig_path, site)):
+        pass
+    else:
+        os.mkdir(os.path.join(fig_path, site))
+    
+    site_path = os.path.join(fig_path, site)
     # get parmfiles
     sql = "SELECT sCellFile.cellid, sCellFile.respfile, gDataRaw.resppath from sCellFile INNER JOIN" \
                " gCellMaster ON (gCellMaster.id=sCellFile.masterid) INNER JOIN" \
@@ -68,6 +76,8 @@ for site in sites:
             br.psth(rec, chan=rec['resp'].chans[i], epochs=ref_stims, ep_dur=ref_dur, cmap='viridis', prestim=pre_post, supp_legend=True, ax=ax.flatten()[i])
     f.tight_layout()
 
+    f.savefig(site_path + '/REF_psth.png')
+
     # PSTHs for TARs (and CATCH)
     d1 = int(np.sqrt(rec['resp'].shape[0]))
     f, ax = plt.subplots(d1+1, d1+1, figsize=(16, 12))
@@ -77,6 +87,8 @@ for site in sites:
         else:
             br.psth(rec, chan=rec['resp'].chans[i], epochs=sounds, ep_dur=ref_dur, cmap=None, prestim=pre_post, supp_legend=True, ax=ax.flatten()[i])
     f.tight_layout()
+
+    f.savefig(site_path + '/TAR_CAT_psth.png')
 
     # TUNING CURVES
     cfs = [s.split('_')[-1] for s in ref_stims]
@@ -100,6 +112,8 @@ for site in sites:
 
     f.tight_layout()
 
+    f.savefig(site_path + '/REF_FTC.png')
+
 
     # Mean tuning curve across population
     f, ax = plt.subplots(1, 1)
@@ -117,6 +131,8 @@ for site in sites:
     ax.legend(frameon=False)
 
     f.tight_layout()
+
+    f.savefig(site_path + '/population_FTC.png')
 
     # =================================== trial-averaged PCA space ====================================
     rall = rec.copy()
@@ -161,27 +177,44 @@ for site in sites:
 
     # project active / passive responses onto PCA plane
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
-
-    for e in all_stims:
-        passive = dp[e].mean(axis=-1).dot(pc_axes.T)
-        active = da[e].mean(axis=-1).dot(pc_axes.T)
-
+    colors = plt.cm.get_cmap('brg', len(ref_stims))
+    col = 0
+    for e in ref_stims: #all_stims:
         if e in ref_stims:
-            ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', color='lightgrey', lw=0)
-            el = compute_ellipse(passive[:, 0], passive[:, 1])
-            ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
-            
-            ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', color='lightgrey', lw=0)
-            el = compute_ellipse(active[:, 0], active[:, 1])
-            ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+            try:
+                passive = dp[e].mean(axis=-1).dot(pc_axes.T)
+                ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', lw=0, color=colors(col))
+                el = compute_ellipse(passive[:, 0], passive[:, 1])
+                ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
+            except:
+                pass
+
+            try:
+                active = da[e].mean(axis=-1).dot(pc_axes.T)
+                ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', lw=0, color=colors(col))
+                el = compute_ellipse(active[:, 0], active[:, 1])
+                ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+            except: 
+                pass
+            col += 1
         else:
-            ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', lw=0, label=e)
-            el = compute_ellipse(passive[:, 0], passive[:, 1])
-            ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
+            try:
+                passive = dp[e].mean(axis=-1).dot(pc_axes.T)
+                ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', lw=0, label=e, color=colors(col))
+                el = compute_ellipse(passive[:, 0], passive[:, 1])
+                ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
+            except:
+                pass
             
-            ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', lw=0, label=e)
-            el = compute_ellipse(active[:, 0], active[:, 1])
-            ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+            try:
+                active = da[e].mean(axis=-1).dot(pc_axes.T)
+                ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', lw=0, label=e, color=colors(col))
+                el = compute_ellipse(active[:, 0], active[:, 1])
+                ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+            except:
+                pass
+        
+            col += 1
 
     ax[0].axhline(0, linestyle='--', lw=2, color='grey')
     ax[0].axvline(0, linestyle='--', lw=2, color='grey')
@@ -200,6 +233,8 @@ for site in sites:
     fig.canvas.set_window_title("PCA decompostion")
 
     fig.tight_layout()
+
+    fig.savefig(site_path + '/PCA_space.png')
 
     # =================================== TDR space - tar/cat only ====================================
     # project onto tar/cat discrim axis / principle noise axis for these stims
@@ -259,18 +294,24 @@ for site in sites:
 
     # project active / passive responses onto PCA plane
     fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+    colors = plt.cm.get_cmap('tab10', len(sounds))
+    for col, e in enumerate(sounds):
 
-    for e in sounds:
-        passive = dp[e].mean(axis=-1).dot(tdr_weights.T)
-        active = da[e].mean(axis=-1).dot(tdr_weights.T)
-
-        ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', lw=0, label=e)
-        el = compute_ellipse(passive[:, 0], passive[:, 1])
-        ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
+        try:
+            passive = dp[e].mean(axis=-1).dot(tdr_weights.T)
+            ax[0].plot(passive[:, 0], passive[:, 1], alpha=0.3, marker='.', lw=0, label=e, color=colors(col))
+            el = compute_ellipse(passive[:, 0], passive[:, 1])
+            ax[0].plot(el[0], el[1], lw=1, color=ax[0].get_lines()[-1].get_color())
+        except:
+            pass
         
-        ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', lw=0, label=e)
-        el = compute_ellipse(active[:, 0], active[:, 1])
-        ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+        try:
+            active = da[e].mean(axis=-1).dot(tdr_weights.T)
+            ax[1].plot(active[:, 0], active[:, 1], alpha=0.3, marker='.', lw=0, label=e, color=colors(col))
+            el = compute_ellipse(active[:, 0], active[:, 1])
+            ax[1].plot(el[0], el[1], lw=1, color=ax[1].get_lines()[-1].get_color())
+        except:
+            pass
 
     ax[0].axhline(0, linestyle='--', lw=2, color='grey')
     ax[0].axvline(0, linestyle='--', lw=2, color='grey')
@@ -290,6 +331,7 @@ for site in sites:
 
     fig.tight_layout()
 
+    fig.savefig(site_path + '/TDR_space.png')
 
 
     # ================================= Explicitly compute pop. coding angles ==================================
