@@ -49,3 +49,12 @@ for ud in uDate:
         parmfiles = np.array(parmfiles)[~bad_idx].tolist()
     manager = BAPHYExperiment(parmfiles)
     rec = manager.get_recording(**options)
+
+
+    # plot an overall RT histogram
+    bins = np.arange(0, 3, 0.1)
+    # leave behavior options as defaults, if want to include
+    # invalid trials, update options dict with appropriate vals
+    trials = range(100, 224)
+    f, ax = plt.subplots(1, 1, figsize=(6, 4))
+    manager.plot_RT_histogram(trials=trials, bins=bins, ax=ax, **options)
