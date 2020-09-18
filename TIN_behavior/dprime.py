@@ -52,7 +52,7 @@ for site in sites:
     # find / sort epoch names
     targets = [f for f in rec['resp'].epochs.name.unique() if 'TAR_' in f]
     catch = [f for f in rec['resp'].epochs.name.unique() if 'CAT_' in f]
-
+    rem = [f for f in rec['resp'].epochs.name.unique() if 'REM_' in f]
     sounds = targets + catch
 
     # get all pairwise combos of targets / catches
