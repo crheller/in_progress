@@ -25,7 +25,7 @@ options = {"resp": False, "pupil": False, "rasterfs": 20}
 
 runclass = 'TBP'
 ed = '2020-08-05'
-ld = '2020-09-10'
+ld = '2020-09-17'
 ed = dt.datetime.strptime(ed, '%Y-%m-%d')
 ld = dt.datetime.strptime(ld, '%Y-%m-%d')
 
@@ -54,8 +54,10 @@ uDate = d['date'].unique()
 # assume levels are [-10, -5, 0, Inf]
 all_snrs = np.array([-10, -5, 0, np.inf])
 LI_EARLY = np.full((4, len(uDate)), np.nan)
+LI_MID = np.full((4, len(uDate)), np.nan)
 LI_LATE = np.full((4, len(uDate)), np.nan)
 LI_ALL = np.full((4, len(uDate)), np.nan)
+VALID_TRIALS = np.full(len(uDate), np.nan)
 
 for idx, ud in enumerate(uDate):
     parmfiles = d[d.date==ud].parmfile_path.values.tolist()
@@ -74,7 +76,7 @@ for idx, ud in enumerate(uDate):
         parmfiles = np.array(manager.parmfile)[pf_mask].tolist()
         manager = BAPHYExperiment(parmfiles)
 
-    rec = manager.get_recording(**options)
+    rec = manager.get_recording(recache=True, **options)
     rec = rec.and_mask(['ACTIVE_EXPERIMENT'])
 
     # define overlapping trial windows for behavior metrics
@@ -120,14 +122,17 @@ for idx, ud in enumerate(uDate):
     # get performance in the three windows (and overall)
     perf_all = manager.get_behavior_performance(**options)
     perf_early = manager.get_behavior_performance(trials=t1, **options)
+    perf_mid = manager.get_behavior_performance(trials=t2, **options)
     perf_late = manager.get_behavior_performance(trials=t3, **options)
     li = []
     li_early = []
+    li_mid = []
     li_late = []
     if len(catch)==1:
         for t in targets:
             li.append(perf_all['LI'][t+'_'+catch[0]])
             li_early.append(perf_early['LI'][t+'_'+catch[0]])
+            li_mid.append(perf_mid['LI'][t+'_'+catch[0]])
             li_late.append(perf_late['LI'][t+'_'+catch[0]])
     elif len(catch)==2:
         # only compute LI for the "on-BF" targets vs. on-BF catch -- discard off-center masker for this analysis
@@ -138,6 +143,7 @@ for idx, ud in enumerate(uDate):
         for t in targets:
             li.append(perf_all['LI'][t+'_'+catch[0]])
             li_early.append(perf_early['LI'][t+'_'+catch[0]])
+            li_mid.append(perf_early['LI'][t+'_'+catch[0]])
             li_late.append(perf_late['LI'][t+'_'+catch[0]])
 
 
@@ -156,17 +162,19 @@ for idx, ud in enumerate(uDate):
 
     f.tight_layout()
 
-
     snr_idx = [np.argwhere(all_snrs==s)[0][0] for s in snrs]
 
     nValidTrials_early = np.sum([v for k,v in perf_early['nTrials'].items() if k!='Reference'])
     nValidTrials_late = np.sum([v for k,v in perf_late['nTrials'].items() if k!='Reference'])
-    if (nValidTrials_early >= 20) & (nValidTrials_late >= 20):
+    if 1: #(nValidTrials_early >= 20) & (nValidTrials_late >= 20):
         # only save days with sufficient data
         LI_ALL[snr_idx, idx] = li
         LI_EARLY[snr_idx, idx] = li_early
+        LI_MID[snr_idx, idx] = li_mid
         LI_LATE[snr_idx, idx] = li_late
 
+    nValidTrials = np.sum([v for k,v in perf_all['nTrials'].items() if k!='Reference'])
+    VALID_TRIALS[idx] = nValidTrials
 
 # summary plot of LI
 snr_strings = ['-10', '-5', '0', 'Inf']
@@ -176,14 +184,19 @@ m = np.nanmean(LI_ALL, axis=-1)
 mse = np.nanstd(LI_ALL, axis=-1) / np.sqrt(LI_ALL.shape[-1])
 m_early = np.nanmean(LI_EARLY, axis=-1)
 mse_early = np.nanstd(LI_EARLY, axis=-1) / np.sqrt(LI_EARLY.shape[-1])
+m_mid = np.nanmean(LI_MID, axis=-1)
+mse_mid = np.nanstd(LI_MID, axis=-1) / np.sqrt(LI_MID.shape[-1])
 m_late = np.nanmean(LI_LATE, axis=-1)
 mse_late = np.nanstd(LI_LATE, axis=-1) / np.sqrt(LI_LATE.shape[-1])
 
-ax.plot(range(len(snr_strings)), m, 'o-', label='All Trials')
-ax.fill_between(range(len(snr_strings)), m-mse, m+mse, alpha=0.3)
+#ax.plot(range(len(snr_strings)), m, 'o-', label='All Trials')
+#ax.fill_between(range(len(snr_strings)), m-mse, m+mse, alpha=0.3)
 
 ax.plot(range(len(snr_strings)), m_early, 'o-', label='Early')
 ax.fill_between(range(len(snr_strings)), m_early-mse_early, m_early+mse_early, alpha=0.3)
+
+ax.plot(range(len(snr_strings)), m_mid, 'o-', label='Middle')
+ax.fill_between(range(len(snr_strings)), m_mid-mse_mid, m_mid+mse_mid, alpha=0.3)
 
 ax.plot(range(len(snr_strings)), m_late, 'o-', label='Late')
 ax.fill_between(range(len(snr_strings)), m_late-mse_late, m_late+mse_late, alpha=0.3)

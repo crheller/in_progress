@@ -10,6 +10,7 @@ Label each figure with:
 from nems_lbhb.baphy_experiment import BAPHYExperiment
 import charlieTools.baphy_remote as br
 import charlieTools.noise_correlations as nc
+import charlieTools.TIN_behavior.tin_helpers as thelp
 from charlieTools.plotting import compute_ellipse
 from sklearn.decomposition import PCA
 import nems.db as nd
@@ -23,14 +24,13 @@ mpl.rcParams['axes.spines.top'] = False
 fig_path = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/dump_figs/'
 
 # recording load options
-options = {'resp': True, 'pupil': False, 'rasterfs': 10, 'recache': True}
+options = {'resp': True, 'pupil': False, 'rasterfs': 10, 'recache': False}
 
 # state-space projection options
-zscore = False
+zscore = True
 
 # siteids
 sites = ['CRD009b', 'CRD010b', 'CRD011c', 'CRD012b', 'CRD013b', 'CRD016c', 'CRD017c', 'CRD018d', 'CRD019b']
-
 for site in sites:
     if os.path.isdir(os.path.join(fig_path, site)):
         pass
@@ -118,8 +118,8 @@ for site in sites:
     # Mean tuning curve across population
     f, ax = plt.subplots(1, 1)
 
-    tar_freq = int(np.array(targets)[np.argwhere([True if '+Inf' in t else False for t in targets])][0][0].split('_')[1].split('+')[0])
-
+    #tar_freq = int(np.array(targets)[np.argwhere([True if '+Inf' in t else False for t in targets])][0][0].split('_')[1].split('+')[0])
+    tar_freq = int([e for e in rec.epochs.name.unique() if 'REM_' in e][0].split('_')[1].split('+')[0])
     ax.set_title('Population (mean) Tuning Curve')
     ax.plot(np.stack(ftc_all).mean(axis=0))
     ax.axvline(np.argwhere(np.array([int(cf) for cf in cfs])==tar_freq)[0][0], 
@@ -147,6 +147,7 @@ for site in sites:
     # zscore each neuron
     m = np.concatenate([d[e] for e in d.keys()], axis=0).mean(axis=-1).mean(axis=0)
     sd = np.concatenate([d[e] for e in d.keys()], axis=0).mean(axis=-1).std(axis=0)
+    sd[sd==0] = 1
     if zscore:
         d = {k: (v.transpose(0, -1, 1) - m).transpose(0, -1, 1)  for (k, v) in d.items()}
         d = {k: (v.transpose(0, -1, 1) / sd).transpose(0, -1, 1)  for (k, v) in d.items()}
@@ -158,7 +159,7 @@ for site in sites:
     pc_axes = pca.components_
 
     ra = rec.copy().create_mask(True)
-    ra = ra.and_mask(['HIT_TRIAL', 'MISS_TRIAL', 'CORRECT_REJECT_TRIAL'])
+    ra = ra.and_mask(['HIT_TRIAL', 'MISS_TRIAL', 'INCORRECT_HIT_TRIAL', 'CORRECT_REJECT_TRIAL'])
     da = ra['resp'].extract_epochs(all_stims, mask=ra['mask'])
     da = {k: v[:, :, prestim:poststim] for (k, v) in da.items()}
     da = {k: v[~np.isnan(v.sum(axis=(1, 2))), :, :] for (k, v) in da.items()}
@@ -251,6 +252,7 @@ for site in sites:
     # zscore each neuron
     m = np.concatenate([d[e] for e in d.keys()], axis=0).mean(axis=-1).mean(axis=0)
     sd = np.concatenate([d[e] for e in d.keys()], axis=0).mean(axis=-1).std(axis=0)
+    sd[sd==0] = 1
     if zscore:
         d = {k: (v.transpose(0, -1, 1) - m).transpose(0, -1, 1)  for (k, v) in d.items()}
         d = {k: (v.transpose(0, -1, 1) / sd).transpose(0, -1, 1)  for (k, v) in d.items()}
@@ -277,7 +279,7 @@ for site in sites:
     tdr_weights = np.concatenate((dU, orth_ax), axis=0)
 
     ra = rec.copy().create_mask(True)
-    ra = ra.and_mask(['HIT_TRIAL', 'MISS_TRIAL', 'CORRECT_REJECT_TRIAL'])
+    ra = ra.and_mask(['HIT_TRIAL', 'MISS_TRIAL', 'CORRECT_REJECT_TRIAL', 'INCORRECT_HIT_TRIAL'])
     da = ra['resp'].extract_epochs(sounds, mask=ra['mask'])
     da = {k: v[:, :, prestim:poststim] for (k, v) in da.items()}
     da = {k: v[~np.isnan(v.sum(axis=(1, 2))), :, :] for (k, v) in da.items()}
