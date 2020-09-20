@@ -10,6 +10,8 @@ import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 
+figsave = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behave_vs_dprime.pdf'
+
 df = pd.read_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
 df.index = df.pair
 
@@ -24,7 +26,9 @@ di = df.loc[mask & df.active][['DI', 'site', 'area', 'snr1', 'f1', 'f2']]
 df_delt = pd.concat([delta_dp, di], axis=1)
 
 mapping = {-5: 40, 0: 100, np.inf: 160}
-f, ax = plt.subplots(1, 2, figsize=(10, 5))
+
+f, ax = plt.subplots(1, 2, figsize=(12, 6))
+
 for s in df_delt.site.unique():
     _df = df_delt.loc[df_delt.site==s].sort_values(by='snr1')
     size = [v for (k, v) in mapping.items() if k in _df.snr1.values]
@@ -49,5 +53,6 @@ ax[1].legend(frameon=False)
 
 f.tight_layout()
 
+f.savefig(figsave)
 
 plt.show()
