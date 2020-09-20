@@ -8,10 +8,12 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 14
 
-figsave = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/invariance.pdf'
+figsave = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/invariance.pdf'
 
-df = pd.read_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
+df = pd.read_csv('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
 df.index = df.pair
 
 val = 'dp_opt'

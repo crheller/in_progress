@@ -26,8 +26,8 @@ mpl.rcParams['axes.spines.top'] = False
 import datetime as dt
 
 # one figure for overall behavior, one for learning
-figsave1 = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behavior1.pdf'
-figsave2 = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behavior2.pdf'
+figsave1 = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behavior1.pdf'
+figsave2 = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behavior2.pdf'
 
 import charlieTools.TIN_behavior.tin_helpers as thelp
 
@@ -42,9 +42,11 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 14
 import datetime as dt
 
-rel = True       # define early / middle / late trials with relative trial number (e.g. first 50% of trials during that session)
+rel = False       # define early / middle / late trials with relative trial number (e.g. first 50% of trials during that session)
 absolute = True # define early / middle / late trials with absolute trial number
 
 # recording load options

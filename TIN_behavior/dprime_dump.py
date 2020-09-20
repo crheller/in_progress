@@ -23,9 +23,11 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['font.size'] = 14
 
 # fig path
-fpath = '/home/charlie/Desktop/lbhb/tmp_figures/tbp_decoding/'
+fpath = '/auto/users/hellerc/results/tmp_figures/tbp_decoding/'
 
 # recording load options
 options = {'resp': True, 'pupil': False, 'rasterfs': 10}
@@ -54,7 +56,7 @@ for batch in batches:
     for site in sites:
         skip_site = False
         # set up subplots for PCA / TDR projections
-        f, ax = plt.subplots(2, 2, figsize=(8, 8))
+        f, ax = plt.subplots(2, 2, figsize=(12, 10))
         f.canvas.set_window_title(site)
 
         print("Analyzing site: {}".format(site))
@@ -244,7 +246,7 @@ for batch in batches:
                 ax[1, 1].plot(el[0], el[1], color=cat_colors(i+1), lw=2)
 
 
-            leg = ax[0, 0].legend(frameon=False, handlelength=0)
+            leg = ax[0, 0].legend(frameon=False, handlelength=0, bbox_to_anchor=(-0.05, 1.0), loc='upper right')
             for line, text in zip(leg.get_lines(), leg.get_texts()):
                 text.set_color(line.get_color())
             ax[0, 0].set_xlabel(r"$TDR_1$ ($\Delta \mu$)")
@@ -371,7 +373,6 @@ dtypes = {
     'cat_tar': 'bool',
     'f1': 'int32',
     'f2': 'int32',
-    'dp_diag': 'float32',
     'DI': 'float32'
     }
 dtypes_new = {k: v for k, v in dtypes.items() if k in df.columns}
