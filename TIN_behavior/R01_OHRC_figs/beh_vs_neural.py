@@ -2,7 +2,7 @@
 Attempt to relate behavioral performance changes to neural changes
 (in d', and in noise space)
 """
-
+import scipy.stats as ss
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,9 +12,9 @@ mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 14
 
-figsave = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behave_vs_dprime.pdf'
+figsave = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behave_vs_dprime.pdf'
 
-df = pd.read_csv('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
+df = pd.read_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
 df.index = df.pair
 
 val = 'dp_opt'  # centroid or optimal decoder
@@ -42,14 +42,20 @@ for s in df_delt.site.unique():
     else:
         ax[0].scatter(_df['DI'], _df[val], edgecolor=ec, label=s, s=size, lw=1)
 
+# get A1 corr. coef
+ra1, pa1 = ss.pearsonr(df_delt.loc[df_delt.area=='A1'][val], df_delt.loc[df_delt.area=='A1']['DI'])  
+
+# get PEG corr. coef
+rpeg, ppeg = ss.pearsonr(df_delt.loc[df_delt.area=='PEG'][val], df_delt.loc[df_delt.area=='PEG']['DI']) 
+
 ax[0].axvline(0.5, linestyle='--', color='grey')
 ax[1].axvline(0.5, linestyle='--', color='grey')
 ax[0].set_xlabel('Behavioral DI \n (catch vs. tar)')
 ax[1].set_xlabel('Behavioral DI \n (catch vs. tar)')
 ax[0].set_ylabel(r"$\Delta d'^2$")
 ax[1].set_ylabel(r"$\Delta d'^2$")
-ax[0].set_title('A1')
-ax[1].set_title('PEG')
+ax[0].set_title(f'A1, r: {round(ra1, 3)}, p: {round(pa1, 3)}')
+ax[1].set_title(f'PEG, r: {round(rpeg, 3)}, p: {round(ppeg, 3)}')
 ax[0].legend(frameon=False)
 ax[1].legend(frameon=False)
 
