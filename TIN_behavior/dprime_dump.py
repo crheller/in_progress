@@ -35,10 +35,10 @@ batches = [324, 325]
 recache = False
 
 # state-space projection options
-zscore = True
+zscore = False
 
 # plot ref
-plot_ref = True
+plot_ref = False
 if plot_ref:
     fext = '_withREF'
 else:
@@ -218,11 +218,15 @@ for batch in batches:
             ylims = (np.min([ax[0, 0].get_ylim()[0], ax[0, 1].get_ylim()[0]]), np.max([ax[0, 0].get_ylim()[1], ax[0, 1].get_ylim()[1]]))
             xlims = (np.min([ax[0, 0].get_xlim()[0], ax[0, 1].get_xlim()[0]]), np.max([ax[0, 0].get_xlim()[1], ax[0, 1].get_xlim()[1]]))
             ax[0, 0].set_xlim(xlims)
+            ax[0, 0].set_ylim(ylims)
+            ax[0, 1].set_xlim(xlims)
             ax[0, 1].set_ylim(ylims)
 
-            ylims = (np.min([ax[1, 0].get_ylim()[0], ax[1, 1].get_ylim()[0]]), np.max([ax[1, 0].get_ylim()[1], ax[0, 1].get_ylim()[1]]))
-            xlims = (np.min([ax[1, 0].get_xlim()[0], ax[1, 1].get_xlim()[0]]), np.max([ax[1, 0].get_xlim()[1], ax[0, 1].get_xlim()[1]]))
+            ylims = (np.min([ax[1, 0].get_ylim()[0], ax[1, 1].get_ylim()[0]]), np.max([ax[1, 0].get_ylim()[1], ax[1, 1].get_ylim()[1]]))
+            xlims = (np.min([ax[1, 0].get_xlim()[0], ax[1, 1].get_xlim()[0]]), np.max([ax[1, 0].get_xlim()[1], ax[1, 1].get_xlim()[1]]))
             ax[1, 0].set_xlim(xlims)
+            ax[1, 0].set_ylim(ylims)
+            ax[1, 1].set_xlim(xlims)
             ax[1, 1].set_ylim(ylims)
 
 
