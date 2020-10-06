@@ -38,7 +38,7 @@ recache = False
 zscore = False
 
 # plot ref
-plot_ref = False
+plot_ref = True
 if plot_ref:
     fext = '_withREF'
 else:
@@ -104,7 +104,7 @@ for batch in batches:
             # get all pairwise combos of targets / catches
             pairs = list(combinations(sounds, 2))
             index = [p[0]+'_'+p[1] for p in pairs]
-            df = pd.DataFrame(columns=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair' \
+            df = pd.DataFrame(columns=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair' \
                                     'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI'])
 
             # get overall TDR axes (grouping target / catch)
@@ -327,23 +327,23 @@ for batch in batches:
                 # using overall tdr
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(all_tdr_weights.T).T, r2.dot(all_tdr_weights.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(all_tdr_weights.T).T, r2.dot(all_tdr_weights.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, True, False, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, True, False, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
 
                 
                 # using pair-specific tdr
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(pair_tdr_weights.T).T, r2.dot(pair_tdr_weights.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(pair_tdr_weights.T).T, r2.dot(pair_tdr_weights.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, False, False, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, False, False, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
 
                 # using PCA
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(pc_axes.T).T, r2.dot(pc_axes.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(pc_axes.T).T, r2.dot(pc_axes.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, False, True, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, False, True, True, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
             
             
@@ -354,22 +354,22 @@ for batch in batches:
                 # using overall tdr
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(all_tdr_weights.T).T, r2.dot(all_tdr_weights.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(all_tdr_weights.T).T, r2.dot(all_tdr_weights.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, True, False, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, True, False, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
                 
                 # using pair-specific tdr
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(pair_tdr_weights.T).T, r2.dot(pair_tdr_weights.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(pair_tdr_weights.T).T, r2.dot(pair_tdr_weights.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, False, False, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, False, False, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
 
                 # using PCA
                 dp, wopt, evals, evecs, evec_sim, dU = compute_dprime(r1.dot(pc_axes.T).T, r2.dot(pc_axes.T).T)
                 dp_diag, _, _, _, _, _ = compute_dprime(r1.dot(pc_axes.T).T, r2.dot(pc_axes.T).T, diag=True)
-                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evec_sim, dU, dp_diag, False, True, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
-                            index=['dp_opt', 'wopt', 'evecs', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
+                df = df.append(pd.DataFrame(data=[dp, wopt, evecs, evals, evec_sim, dU, dp_diag, False, True, False, idx, snr1, snr2, cat_cat, tar_tar, cat_tar, f1, f2, di], \
+                            index=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair', \
                                 'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI']).T)
 
             df['site'] = site
@@ -384,6 +384,7 @@ dtypes = {
     'dp_opt': 'float32',
     'wopt': 'object',
     'evecs': 'object',
+    'evals': 'object',
     'evec_sim': 'float',
     'dU': 'object',
     'dp_diag': 'float32',
@@ -404,5 +405,5 @@ dtypes_new = {k: v for k, v in dtypes.items() if k in df.columns}
 df = df.astype(dtypes_new)
 
 df.to_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv')
-
+df.to_pickle('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.pickle')
 plt.close('all')
