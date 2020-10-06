@@ -82,10 +82,15 @@ for batch in batches:
         targets = thelp.sort_targets([f for f in _ra['resp'].epochs.name.unique() if 'TAR_' in f])
         # only keep target presented at least 5 times
         targets = [t for t in targets if (_ra['resp'].epochs.name==t).sum()>=5]
+        # remove "off-center targets"
+        on_center = thelp.get_tar_freqs([f.strip('REM_') for f in _ra['resp'].epochs.name.unique() if 'REM_' in f])[0]
+        targets = [t for t in targets if str(on_center) in t]
         if len(targets)==0:
             # NOT ENOUGH REPS AT THIS SITE
             skip_site = True
         catch = [f for f in _ra['resp'].epochs.name.unique() if 'CAT_' in f]
+        # remove off-center catches
+        catch = [c for c in catch if str(on_center) in c]
         ref_stim = thelp.sort_refs([f for f in _ra['resp'].epochs.name.unique() if 'STIM_' in f])
         rem = [f for f in rec['resp'].epochs.name.unique() if 'REM_' in f]
         sounds = targets + catch
@@ -95,7 +100,7 @@ for batch in batches:
             tar_colors = plt.get_cmap('Reds', len(targets)+2)
             cat_colors = plt.get_cmap('Greys', len(catch)+2)
             ref_colors = plt.get_cmap('viridis', len(ref_stim))
-
+            BwG, gR = thelp.make_tbp_colormaps(ref_stim, catch+targets)
             # get all pairwise combos of targets / catches
             pairs = list(combinations(sounds, 2))
             index = [p[0]+'_'+p[1] for p in pairs]
@@ -143,108 +148,125 @@ for batch in batches:
                     r1 = (r1 - m) / sd
                     r1 = r1.dot(all_tdr_weights.T).T
                     ax[0, 0].set_title('Active')
-                    ax[0, 0].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=ref_colors(i))
+                    ax[0, 0].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=BwG(i))
                     el = thelp.compute_ellipse(r1[0], r1[1])
-                    ax[0, 0].plot(el[0], el[1], color=ref_colors(i), alpha=0.2, label=t.split('STIM_')[1])
+                    ax[0, 0].plot(el[0], el[1], color=BwG(i), alpha=0.2, label=t.split('STIM_')[1])
 
                     r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                     r1 = (r1 - m) / sd
                     r1 = r1.dot(all_tdr_weights.T).T
                     ax[0, 1].set_title('Passive')
-                    ax[0, 1].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=ref_colors(i))
+                    ax[0, 1].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=BwG(i))
                     el = thelp.compute_ellipse(r1[0], r1[1])
-                    ax[0, 1].plot(el[0], el[1], color=ref_colors(i), alpha=0.2)
+                    ax[0, 1].plot(el[0], el[1], color=BwG(i), alpha=0.2)
 
                     # =============================== PCA ========================================
                     r1 = rec['resp'].extract_epoch(t, mask=ra['mask'])[:, :, start:end].mean(axis=-1)
                     r1 = (r1 - m) / sd
                     r1 = r1.dot(pc_axes.T).T
                     ax[1, 0].set_title('Active')
-                    ax[1, 0].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=ref_colors(i))
+                    ax[1, 0].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=BwG(i))
                     el = thelp.compute_ellipse(r1[0], r1[1])
-                    ax[1, 0].plot(el[0], el[1], color=ref_colors(i), alpha=0.2)
+                    ax[1, 0].plot(el[0], el[1], color=BwG(i), alpha=0.2)
 
                     r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                     r1 = (r1 - m) / sd
                     r1 = r1.dot(pc_axes.T).T
                     ax[1, 1].set_title('Passive')
-                    ax[1, 1].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=ref_colors(i))
+                    ax[1, 1].scatter(r1[0], r1[1], alpha=0.2, s=10, lw=0, color=BwG(i))
                     el = thelp.compute_ellipse(r1[0], r1[1])
-                    ax[1, 1].plot(el[0], el[1], color=ref_colors(i), alpha=0.2)
+                    ax[1, 1].plot(el[0], el[1], color=BwG(i), alpha=0.2)
                 
 
-            # TARGETS
-            for i, t in enumerate(targets):
+            # TARGETS / CATCHES
+            for i, t in enumerate(catch + targets):
                 # ================================ TDR ==========================================
                 r1 = rec['resp'].extract_epoch(t, mask=ra['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(all_tdr_weights.T).T
                 ax[0, 0].set_title('Active')
-                ax[0, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=tar_colors(i+1))
+                ax[0, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=gR(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[0, 0].plot(el[0], el[1], color=tar_colors(i+1), label=t, lw=2)
+                ax[0, 0].plot(el[0], el[1], color=gR(i), label=t, lw=2)
 
                 r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(all_tdr_weights.T).T
                 ax[0, 1].set_title('Passive')
-                ax[0, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=tar_colors(i+1))
+                ax[0, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=gR(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[0, 1].plot(el[0], el[1], color=tar_colors(i+1), lw=2)
+                ax[0, 1].plot(el[0], el[1], color=gR(i), lw=2)
 
                 # =============================== PCA ========================================
                 r1 = rec['resp'].extract_epoch(t, mask=ra['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(pc_axes.T).T
                 ax[1, 0].set_title('Active')
-                ax[1, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=tar_colors(i+1))
+                ax[1, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=gR(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[1, 0].plot(el[0], el[1], color=tar_colors(i+1), label=t, lw=2)
+                ax[1, 0].plot(el[0], el[1], color=gR(i), label=t, lw=2)
 
                 r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(pc_axes.T).T
                 ax[1, 1].set_title('Passive')
-                ax[1, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=tar_colors(i+1))
+                ax[1, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=gR(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[1, 1].plot(el[0], el[1], color=tar_colors(i+1), lw=2)
+                ax[1, 1].plot(el[0], el[1], color=gR(i), lw=2)
+
+
+            ylims = (np.min([ax[0, 0].get_ylim()[0], ax[0, 1].get_ylim()[0]]), np.max([ax[0, 0].get_ylim()[1], ax[0, 1].get_ylim()[1]]))
+            xlims = (np.min([ax[0, 0].get_xlim()[0], ax[0, 1].get_xlim()[0]]), np.max([ax[0, 0].get_xlim()[1], ax[0, 1].get_xlim()[1]]))
+            ax[0, 0].set_xlim(xlims)
+            ax[0, 0].set_ylim(ylims)
+            ax[0, 1].set_xlim(xlims)
+            ax[0, 1].set_ylim(ylims)
+
+            ylims = (np.min([ax[1, 0].get_ylim()[0], ax[1, 1].get_ylim()[0]]), np.max([ax[1, 0].get_ylim()[1], ax[1, 1].get_ylim()[1]]))
+            xlims = (np.min([ax[1, 0].get_xlim()[0], ax[1, 1].get_xlim()[0]]), np.max([ax[1, 0].get_xlim()[1], ax[1, 1].get_xlim()[1]]))
+            ax[1, 0].set_xlim(xlims)
+            ax[1, 0].set_ylim(ylims)
+            ax[1, 1].set_xlim(xlims)
+            ax[1, 1].set_ylim(ylims)
+
 
             # CATCH
+            '''
             for i, t in enumerate(catch):
                 # ================================ TDR ==========================================
                 r1 = rec['resp'].extract_epoch(t, mask=ra['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(all_tdr_weights.T).T
                 ax[0, 0].set_title('Active')
-                ax[0, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i+1))
+                ax[0, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[0, 0].plot(el[0], el[1], color=cat_colors(i+1), label=t, lw=2)
+                ax[0, 0].plot(el[0], el[1], color=cat_colors(i), label=t, lw=2)
 
                 r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(all_tdr_weights.T).T
                 ax[0, 1].set_title('Passive')
-                ax[0, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i+1))
+                ax[0, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[0, 1].plot(el[0], el[1], color=cat_colors(i+1), lw=2)
+                ax[0, 1].plot(el[0], el[1], color=cat_colors(i), lw=2)
 
                 # =============================== PCA ========================================
                 r1 = rec['resp'].extract_epoch(t, mask=ra['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(pc_axes.T).T
                 ax[1, 0].set_title('Active')
-                ax[1, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i+1))
+                ax[1, 0].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[1, 0].plot(el[0], el[1], color=cat_colors(i+1), label=t, lw=2)
+                ax[1, 0].plot(el[0], el[1], color=cat_colors(i), label=t, lw=2)
 
                 r1 = rec['resp'].extract_epoch(t, mask=rp['mask'])[:, :, start:end].mean(axis=-1)
                 r1 = (r1 - m) / sd
                 r1 = r1.dot(pc_axes.T).T
                 ax[1, 1].set_title('Passive')
-                ax[1, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i+1))
+                ax[1, 1].scatter(r1[0], r1[1], alpha=1, s=10, lw=0, color=cat_colors(i))
                 el = thelp.compute_ellipse(r1[0], r1[1])
-                ax[1, 1].plot(el[0], el[1], color=cat_colors(i+1), lw=2)
-
+                ax[1, 1].plot(el[0], el[1], color=cat_colors(i), lw=2)
+            '''
 
             leg = ax[0, 0].legend(frameon=False, handlelength=0, bbox_to_anchor=(-0.05, 1.0), loc='upper right')
             for line, text in zip(leg.get_lines(), leg.get_texts()):
@@ -261,7 +283,10 @@ for batch in batches:
 
             f.tight_layout()
 
-            f.savefig(fpath + f'{site}{fext}.pdf')
+            if zscore:
+                f.savefig(fpath + f'{site}{fext}_zscore.pdf')
+            else:
+                f.savefig(fpath + f'{site}{fext}.pdf')
 
             # get behavior performance for this site
             behavior_performance = manager.get_behavior_performance(**options)
