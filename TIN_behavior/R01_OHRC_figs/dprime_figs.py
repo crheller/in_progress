@@ -5,7 +5,7 @@ import matplotlib as mpl
 mpl.rcParams['axes.spines.right'] = False
 mpl.rcParams['axes.spines.top'] = False
 
-df = pd.read_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
+df = pd.read_csv('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res_pr.csv', index_col=0)
 df.index = df.pair
 
 # ================================  neurometric function overall ===========================================

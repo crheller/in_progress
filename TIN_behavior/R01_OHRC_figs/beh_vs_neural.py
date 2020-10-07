@@ -14,7 +14,7 @@ mpl.rcParams['font.size'] = 14
 
 figsave = '/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/behave_vs_dprime.pdf'
 
-df = pd.read_csv('/home/charlie/Desktop/lbhb/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
+df = pd.read_csv('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res.csv', index_col=0)
 df.index = df.pair
 
 val = 'dp_opt'  # centroid or optimal decoder
@@ -25,7 +25,7 @@ delta_dp = (df.loc[mask & df.active][val] - df.loc[mask & ~df.active][val])
 delta_dp_rel = delta_dp / \
                     (df.loc[mask & df.active][val] + df.loc[mask & ~df.active][val])
 di = df.loc[mask & df.active][['DI', 'site', 'area', 'snr1', 'f1', 'f2']]
-df_delt = pd.concat([delta_dp, di], axis=1)
+df_delt = pd.concat([delta_dp_rel, di], axis=1)
 
 mapping = {-5: 40, 0: 100, np.inf: 160}
 
