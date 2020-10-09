@@ -14,15 +14,15 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 14
 
 # load decoding results
-df = pd.read_pickle('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res.pickle')
+df = pd.read_pickle('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res_pr.pickle')
 df.index = df.pair
 
 # look at catch vs. tar discrimination
-mask = (df.ref_ref) & (df.tdr_overall) & (~df.pca)
+mask = (df.ref_ref) & (~df.tdr_overall) & (~df.pca)
 a1_mask = mask & (df.area=='A1')
 peg_mask = mask & (df.area=='PEG')
-a1_only = False
-peg_only = True
+a1_only = True
+peg_only = False
 
 df['octave_sep'] = np.log2(df['f1']/df['f2'])
 
