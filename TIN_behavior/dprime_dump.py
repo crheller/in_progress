@@ -7,6 +7,7 @@ define TDR over all stims? Or on pairwise basis? Both? Use PC-space too?
 """
 
 from nems_lbhb.baphy_experiment import BAPHYExperiment
+from nems_lbhb.baphy import parse_cellid
 import charlieTools.baphy_remote as br
 import charlieTools.noise_correlations as nc
 import charlieTools.preprocessing as preproc
@@ -32,7 +33,7 @@ fpath = '/auto/users/hellerc/results/tmp_figures/tbp_decoding/'
 
 # recording load options
 options = {'resp': True, 'pupil': True, 'rasterfs': 10}
-batches = [324, 325]
+batches = [302, 324, 325]
 recache = False
 
 # state-space projection options
@@ -42,7 +43,7 @@ zscore = False
 regress_pupil = True
 
 # plot ref
-plot_ref = True
+plot_ref = False
 if plot_ref:
     fext = '_withREF'
 else:
@@ -56,7 +57,11 @@ end = int(0.4 * options['rasterfs'])
 dfs = []
 for batch in batches:
     sites = np.unique([c[:7] for c in nd.get_batch_cells(batch).cellid])
-    sites = [s for s in sites if s!='CRD013b']
+    sites = [s for s in sites if (s!='CRD013b') & ('gus' not in s)]
+    if batch == 302:
+        sites = [s+'.e1:64' for s in sites]
+        sites2 = [s.replace('.e1:64', '.e65:128') for s in sites]
+        sites = sites + sites2
     for site in sites:
         skip_site = False
         # set up subplots for PCA / TDR projections
@@ -64,12 +69,18 @@ for batch in batches:
         f.canvas.set_window_title(site)
 
         print("Analyzing site: {}".format(site))
-        manager = BAPHYExperiment(batch=batch, siteid=site)
+        manager = BAPHYExperiment(batch=batch, siteid=site[:7])
         rec = manager.get_recording(recache=recache, **options)
         rec['resp'] = rec['resp'].rasterize()
+        if len(site)>7:
+            cells, _ = parse_cellid({'cellid': site, 'batch': batch})
+            rec['resp'] = rec['resp'].extract_channels(cells)
 
         # mask appropriate trials
-        rec = rec.and_mask(['PASSIVE_EXPERIMENT', 'HIT_TRIAL', 'CORRECT_REJECT_TRIAL'])
+        if batch == 302:
+            rec = rec.and_mask(['PASSIVE_EXPERIMENT', 'HIT_TRIAL', 'CORRECT_REJECT_TRIAL', 'INCORRECT_HIT_TRIAL'])
+        else:
+            rec = rec.and_mask(['PASSIVE_EXPERIMENT', 'HIT_TRIAL', 'CORRECT_REJECT_TRIAL'])
         rec = rec.apply_mask(reset_epochs=True)
 
         if regress_pupil:
@@ -77,7 +88,10 @@ for batch in batches:
 
         ra = rec.copy()
         ra = ra.create_mask(True)
-        ra = ra.and_mask(['HIT_TRIAL', 'CORRECT_REJECT_TRIAL'])
+        if batch == 302:
+            ra = ra.and_mask(['HIT_TRIAL', 'CORRECT_REJECT_TRIAL', 'INCORRECT_HIT_TRIAL'])
+        else:
+            ra = ra.and_mask(['HIT_TRIAL', 'CORRECT_REJECT_TRIAL'])
 
         rp = rec.copy()
         rp = rp.create_mask(True)
@@ -86,28 +100,49 @@ for batch in batches:
         _rp = rp.apply_mask(reset_epochs=True)
         _ra = ra.apply_mask(reset_epochs=True)
 
-        # find / sort epoch names
-        targets = thelp.sort_targets([f for f in _ra['resp'].epochs.name.unique() if 'TAR_' in f])
-        # only keep target presented at least 5 times
-        targets = [t for t in targets if (_ra['resp'].epochs.name==t).sum()>=5]
-        # remove "off-center targets"
-        on_center = thelp.get_tar_freqs([f.strip('REM_') for f in _ra['resp'].epochs.name.unique() if 'REM_' in f])[0]
-        targets = [t for t in targets if str(on_center) in t]
-        if len(targets)==0:
-            # NOT ENOUGH REPS AT THIS SITE
-            skip_site = True
-        catch = [f for f in _ra['resp'].epochs.name.unique() if 'CAT_' in f]
-        # remove off-center catches
-        catch = [c for c in catch if str(on_center) in c]
+
+        if batch == 302:
+            targets = [f for f in _ra['resp'].epochs.name.unique() if 'TAR_' in f]
+            params = manager.get_baphy_exptparams()
+            params = [p for p in params if p['BehaveObjectClass']!='Passive'][0]
+            tf = params['TrialObject'][1]['TargetHandle'][1]['Names']
+            pdur = params['BehaveObject'][1]['PumpDuration']
+            rew = np.array(tf)[np.array(pdur)==1].tolist()
+            catch = [t for t in targets if (t.split('TAR_')[1] not in rew)]
+            catch_str = [(t+'+InfdB+Noise').replace('TAR_', 'CAT_') for t in targets if (t.split('TAR_')[1] not in rew)]
+            targets = [t for t in targets if (t.split('TAR_')[1] in rew)]
+            targets_str = [t+'+InfdB+Noise' for t in targets if (t.split('TAR_')[1] in rew)]
+        else:
+            # find / sort epoch names
+            targets = thelp.sort_targets([f for f in _ra['resp'].epochs.name.unique() if 'TAR_' in f])
+            # only keep target presented at least 5 times
+            targets = [t for t in targets if (_ra['resp'].epochs.name==t).sum()>=5]
+            # remove "off-center targets"
+            try:
+                on_center = thelp.get_tar_freqs([f.strip('REM_') for f in _ra['resp'].epochs.name.unique() if 'REM_' in f])[0]
+                targets = [t for t in targets if str(on_center) in t]
+            except:
+                pass
+            if len(targets)==0:
+                # NOT ENOUGH REPS AT THIS SITE
+                skip_site = True
+            catch = [f for f in _ra['resp'].epochs.name.unique() if 'CAT_' in f]
+            # remove off-center catches
+            catch = [c for c in catch if str(on_center) in c]
+            rem = [f for f in rec['resp'].epochs.name.unique() if 'REM_' in f]
+            targets_str = targets
+            catch_str = catch
         ref_stim = thelp.sort_refs([f for f in _ra['resp'].epochs.name.unique() if 'STIM_' in f])
-        rem = [f for f in rec['resp'].epochs.name.unique() if 'REM_' in f]
         sounds = targets + catch
 
         if not skip_site:
             # define colormaps for each sound
-            BwG, gR = thelp.make_tbp_colormaps(ref_stim, catch+targets)
+            if batch==302: tar_idx=1
+            else: tar_idx=0
+            BwG, gR = thelp.make_tbp_colormaps(ref_stim, catch_str+targets_str, use_tar_freq_idx=tar_idx)
             # get all pairwise combos of targets / catches
             pairs = list(combinations(['REFERENCE'] + ref_stim + sounds, 2))
+            pairs_str = list(combinations(['REFERENCE'] + ref_stim + catch_str + targets_str, 2))
             index = [p[0]+'_'+p[1] for p in pairs]
             df = pd.DataFrame() #columns=['dp_opt', 'wopt', 'evecs', 'evals', 'evec_sim', 'dU', 'dp_diag', 'tdr_overall', 'pca', 'active', 'pair' \
                                     #'snr1', 'snr2', 'cat_cat', 'tar_tar', 'cat_tar', 'f1', 'f2', 'DI'])
@@ -307,23 +342,23 @@ for batch in batches:
                 print(f"pair {i}/{len(pairs)}")
                 idx = pair[0] + '_' + pair[1]
                 if ('STIM_' in pair[0]) | ('REFERENCE' in pair[0]): snr1 = np.inf
-                else: snr1 = thelp.get_snrs([pair[0]])[0]
+                else: snr1 = thelp.get_snrs([pairs_str[i][0]])[0]
                 if ('STIM_' in pair[1]) | ('REFERENCE' in pair[1]): snr2 = np.inf
-                else: snr2 = thelp.get_snrs([pair[1]])[0]
+                else: snr2 = thelp.get_snrs([pairs_str[i][1]])[0]
                 
                 if ('REFERENCE' in pair[0]): f1 = 0
-                else: f1 = thelp.get_tar_freqs([pair[0].strip('STIM_')])[0]
+                else: f1 = thelp.get_tar_freqs([pairs_str[i][0].strip('STIM_')])[0]
                 if 'REFERENCE' in pair[1]: f2 = 0
-                else: f2 = thelp.get_tar_freqs([pair[1].strip('STIM_')])[0]
-                cat_cat = ('CAT_' in pair[0]) & ('CAT_' in pair[1])
-                tar_tar = ('TAR_' in pair[0]) & ('TAR_' in pair[1])
-                cat_tar = (('CAT_' in pair[0]) & ('TAR_' in pair[1])) | (('CAT_' in pair[1]) & ('TAR_' in pair[0]))
-                ref_tar = (('STIM_' in pair[0]) & ('TAR_' in pair[1])) | (('STIM_' in pair[1]) & ('TAR_' in pair[0]))
-                ref_ref = ('STIM_' in pair[0]) & ('STIM_' in pair[1])
-                ref_cat = (('STIM_' in pair[0]) & ('CAT_' in pair[1])) | (('STIM_' in pair[1]) & ('CAT_' in pair[0]))
-                aref_tar = (('REFERENCE' in pair[0]) & ('TAR_' in pair[1])) | (('REFERENCE' in pair[1]) & ('TAR_' in pair[0]))
-                aref_cat = (('REFERENCE' in pair[0]) & ('CAT_' in pair[1])) | (('REFERENCE' in pair[1]) & ('CAT_' in pair[0]))
-                aref_ref = (('REFERENCE' in pair[0]) & ('STIM_' in pair[1])) | (('REFERENCE' in pair[1]) & ('STIM_' in pair[0]))
+                else: f2 = thelp.get_tar_freqs([pairs_str[i][1].strip('STIM_')])[0]
+                cat_cat = ('CAT_' in pairs_str[i][0]) & ('CAT_' in pairs_str[i][1])
+                tar_tar = ('TAR_' in pairs_str[i][0]) & ('TAR_' in pairs_str[i][1])
+                cat_tar = (('CAT_' in pairs_str[i][0]) & ('TAR_' in pairs_str[i][1])) | (('CAT_' in pairs_str[i][1]) & ('TAR_' in pairs_str[i][0]))
+                ref_tar = (('STIM_' in pairs_str[i][0]) & ('TAR_' in pairs_str[i][1])) | (('STIM_' in pairs_str[i][1]) & ('TAR_' in pairs_str[i][0]))
+                ref_ref = ('STIM_' in pairs_str[i][0]) & ('STIM_' in pairs_str[i][1])
+                ref_cat = (('STIM_' in pairs_str[i][0]) & ('CAT_' in pairs_str[i][1])) | (('STIM_' in pairs_str[i][1]) & ('CAT_' in pairs_str[i][0]))
+                aref_tar = (('REFERENCE' in pairs_str[i][0]) & ('TAR_' in pairs_str[i][1])) | (('REFERENCE' in pairs_str[i][1]) & ('TAR_' in pairs_str[i][0]))
+                aref_cat = (('REFERENCE' in pairs_str[i][0]) & ('CAT_' in pairs_str[i][1])) | (('REFERENCE' in pairs_str[i][1]) & ('CAT_' in pairs_str[i][0]))
+                aref_ref = (('REFERENCE' in pairs_str[i][0]) & ('STIM_' in pairs_str[i][1])) | (('REFERENCE' in pairs_str[i][1]) & ('STIM_' in pairs_str[i][0]))
 
                 if sum([cat_cat, tar_tar, cat_tar, ref_tar, ref_ref, ref_cat, aref_tar, aref_cat, aref_ref]) != 1:
                     raise ValueError("Ambiguous / unknown stimulus pair")
@@ -430,9 +465,10 @@ for batch in batches:
                                 'f1', 'f2', 'DI']).T)
 
             df['site'] = site
-            if batch==324: area='A1'
+            if (batch==324) | (batch==302): area='A1'
             else: area='PEG'
             df['area'] = area
+            df['batch'] = batch
 
             dfs.append(df)
 
@@ -462,7 +498,8 @@ dtypes = {
     'aref_ref': 'bool',
     'f1': 'int32',
     'f2': 'int32',
-    'DI': 'float32'
+    'DI': 'float32',
+    'batch': 'int'
     }
 dtypes_new = {k: v for k, v in dtypes.items() if k in df.columns}
 df = df.astype(dtypes_new)
