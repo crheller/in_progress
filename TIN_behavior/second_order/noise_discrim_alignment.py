@@ -16,7 +16,7 @@ df = pd.read_pickle('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/
 df.index = df.pair
 
 # look at catch vs. tar discrimination, use pair-specific tdr, not pca
-mask = (df.tar_tar) & (df.tdr_overall) & (~df.pca) #& (df.f1==df.f2)
+mask = (df.cat_tar) & (df.tdr_overall) & (~df.pca) & (df.f1==df.f2)
 a1_mask = mask & (df.area=='A1')
 peg_mask = mask & (df.area=='PEG')
 
