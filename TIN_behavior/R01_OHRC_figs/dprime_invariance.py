@@ -11,6 +11,7 @@ mpl.rcParams['axes.spines.top'] = False
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['font.size'] = 14
 
+savefig = False
 figsave = '/auto/users/hellerc/code/projects/in_progress/TIN_behavior/R01_OHRC_figs/invariance.pdf'
 
 df = pd.read_csv('/auto/users/hellerc/code/projects/in_progress/TIN_behavior/res_pr.csv', index_col=0)
@@ -112,6 +113,7 @@ ax[1, 1].set_ylabel(r"$\Delta d'$")
 
 f.tight_layout()
 
-f.savefig(figsave)
+if savefig:
+    f.savefig(figsave)
 
 plt.show()
